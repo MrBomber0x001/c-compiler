@@ -79,10 +79,11 @@ class Scanner:
         self.read_position += 1
 
     def read_char_literal(self):
-        # Skip the initial single quote
-        self.read_char()
+        self.read_char()  # Skip opening quote
         char = self.ch
-        self.read_char()  # Skip the closing quote
+        self.read_char()  # Read the character
+        if self.ch == "'":  # Skip closing quote
+            self.read_char()
         return char
 
     def peek_char(self):
@@ -105,21 +106,16 @@ class Scanner:
         return self.input[start:self.position].strip()
 
     def read_multi_line_comment(self):
-        # Skip the initial '/*'
-        self.read_char()
-        self.read_char()
+        self.read_char()  # Skip /
+        self.read_char()  # Skip *
         start = self.position
-        
-        while True:
-            if self.ch == '\0':
-                break
-            if self.ch == '*' and self.peek_char() == '/':
-                comment = self.input[start:self.position].strip()
-                self.read_char()  # consume *
-                self.read_char()  # consume /
-                return comment
+        while not (self.ch == '*' and self.peek_char() == '/') and self.ch != '\0':
             self.read_char()
-        
+        if self.ch == '*' and self.peek_char() == '/':
+            comment = self.input[start:self.position].strip()
+            self.read_char()  # Skip *
+            self.read_char()  # Skip /
+            return comment
         return self.input[start:self.position].strip()
 
     def read_identifier(self):
@@ -148,7 +144,8 @@ class Scanner:
     
     def read_header(self):
         # Skip the initial '<'
-        start = self.position + 1
+        self.read_char()
+        start = self.position
         while self.ch != '>' and self.ch != '\0':
             self.read_char()
         return self.input[start:self.position]
@@ -172,88 +169,66 @@ class Scanner:
             'for': TokenType.FOR,
             'return': TokenType.RETURN,
         }
-        return keywords.get(identifier, None)
+        return keywords.get(identifier)
 
     def next_token(self):
         self.skip_whitespace()
 
-        if self.ch == '\0':
-            return Token(TokenType.EOF, '')
-
-        token = None
-
         if self.ch == '/' and self.peek_char() == '/':
-            comment = self.read_single_line_comment()
-            return Token(TokenType.SINGLE_LINE_COMMENT, comment)
-        
+            return Token(TokenType.SINGLE_LINE_COMMENT, self.read_single_line_comment())
         elif self.ch == '/' and self.peek_char() == '*':
-            comment = self.read_multi_line_comment()
-            return Token(TokenType.MULTI_LINE_COMMENT, comment)
-        
+            return Token(TokenType.MULTI_LINE_COMMENT, self.read_multi_line_comment())
         elif self.ch == '#':
             self.read_char()
-            identifier = self.read_identifier()
-            return Token(TokenType.PREPROCESSOR, '#' + identifier)
-        
+            return Token(TokenType.PREPROCESSOR, '#' + self.read_identifier())
         elif self.ch == '<' and self.peek_char() != '=':
-            header = self.read_header()
-            return Token(TokenType.HEADER, header)
-        
+            return Token(TokenType.HEADER, self.read_header())
         elif self.ch == "'":
-            char_literal = self.read_char_literal()
-            return Token(TokenType.CHAR_LITERAL, char_literal)
+            return Token(TokenType.CHAR_LITERAL, self.read_char_literal())
 
-
+        token = None
+        
         if self.ch == '=':
             if self.peek_char() == '=':
+                ch = self.ch
                 self.read_char()
-                token = Token(TokenType.EQUAL, '==')
+                token = Token(TokenType.EQUAL, ch + self.ch)
             else:
-                token = Token(TokenType.ASSIGN, '=')
+                token = Token(TokenType.ASSIGN, self.ch)
         elif self.ch == '+':
-            token = Token(TokenType.PLUS, '+')
+            token = Token(TokenType.PLUS, self.ch)
         elif self.ch == '-':
-            token = Token(TokenType.MINUS, '-')
+            token = Token(TokenType.MINUS, self.ch)
         elif self.ch == '*':
-            token = Token(TokenType.MULTIPLY, '*')
+            token = Token(TokenType.MULTIPLY, self.ch)
         elif self.ch == '/':
-            token = Token(TokenType.DIVIDE, '/')
-        elif self.ch == '!':
-            if self.peek_char() == '=':
-                self.read_char()
-                token = Token(TokenType.NOT_EQUAL, '!=')
-            else:
-                token = Token(TokenType.EOF, '!')
+            token = Token(TokenType.DIVIDE, self.ch)
         elif self.ch == '<':
             if self.peek_char() == '=':
+                ch = self.ch
                 self.read_char()
-                token = Token(TokenType.LESS_THAN_EQUAL, '<=')
+                token = Token(TokenType.LESS_THAN_EQUAL, ch + self.ch)
             else:
-                token = Token(TokenType.LESS_THAN, '<')
+                token = Token(TokenType.LESS_THAN, self.ch)
         elif self.ch == '>':
             if self.peek_char() == '=':
+                ch = self.ch
                 self.read_char()
-                token = Token(TokenType.GREATER_THAN_EQUAL, '>=')
+                token = Token(TokenType.GREATER_THAN_EQUAL, ch + self.ch)
             else:
-                token = Token(TokenType.GREATER_THAN, '>')
+                token = Token(TokenType.GREATER_THAN, self.ch)
         elif self.ch == ';':
-            token = Token(TokenType.SEMICOLON, ';')
+            token = Token(TokenType.SEMICOLON, self.ch)
         elif self.ch == ',':
-            token = Token(TokenType.COMMA, ',')
+            token = Token(TokenType.COMMA, self.ch)
         elif self.ch == '(':
-            token = Token(TokenType.LPAREN, '(')
+            token = Token(TokenType.LPAREN, self.ch)
         elif self.ch == ')':
-            token = Token(TokenType.RPAREN, ')')
+            token = Token(TokenType.RPAREN, self.ch)
         elif self.ch == '{':
-            token = Token(TokenType.LBRACE, '{')
+            token = Token(TokenType.LBRACE, self.ch)
         elif self.ch == '}':
-            token = Token(TokenType.RBRACE, '}')
-        elif self.ch == '[':
-            token = Token(TokenType.LBRACKET, '[')
-        elif self.ch == ']':
-            token = Token(TokenType.RBRACKET, ']')
-        elif self.ch == '"':
-            token = Token(TokenType.STRING, self.read_string())
+            token = Token(TokenType.RBRACE, self.ch)
         elif self.ch == '\0':
             token = Token(TokenType.EOF, '')
         else:
@@ -261,27 +236,10 @@ class Scanner:
                 identifier = self.read_identifier()
                 keyword_type = self.lookup_keyword(identifier)
                 if keyword_type:
-                    token = Token(keyword_type, identifier)
-                else:
-                    token = Token(TokenType.IDENTIFIER, identifier)
-                return token
-            elif self.is_digit(self.ch):
-                number = self.read_number()
-                token = Token(TokenType.NUMBER, number)
-                return token
-            else:
-                token = Token(TokenType.EOF, self.ch)
-
-        if token is None:
-            if self.is_letter(self.ch):
-                identifier = self.read_identifier()
-                keyword_type = self.lookup_keyword(identifier)
-                if keyword_type:
                     return Token(keyword_type, identifier)
                 return Token(TokenType.IDENTIFIER, identifier)
             elif self.is_digit(self.ch):
-                number = self.read_number()
-                return Token(TokenType.NUMBER, number)
+                return Token(TokenType.NUMBER, self.read_number())
             else:
                 token = Token(TokenType.EOF, self.ch)
 
