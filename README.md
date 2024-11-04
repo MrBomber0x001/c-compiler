@@ -6,7 +6,7 @@ This repository contains the development of a C compiler, focusing on the initia
 To run this project, execute the following command:
 
 ```sh
-python scanner.py input.c
+python3 scanner.py input.c
 ```
 
 
