@@ -1,4 +1,3 @@
-// This is a single-line comment
 #include <stdio.h>
 
 /*
@@ -12,7 +11,7 @@ int main() {
     char c = 'a';
 
     /* This is another multi-line comment */
-    if (a < b) {
+    if ( a < b ) {
         return a + b;
     } else {
         return c;
