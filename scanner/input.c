@@ -5,15 +5,20 @@
  * that spans multiple lines.
  */
 
-int main() {
+int main()
+{
     int a = 5; // Another single-line comment
     float b = 3.14;
-    char c = 'a';
+    float c = a + b;
 
     /* This is another multi-line comment */
-    if ( a < b ) {
-        return a + b;
-    } else {
-        return c;
+    int x = 5;
+    if (x > 0)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
     }
 }
